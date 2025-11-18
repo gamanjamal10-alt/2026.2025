@@ -6,6 +6,8 @@
     <title>SouqPro | متجرك الاحترافي</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Babel for in-browser JSX compilation (Fixes White Screen on Static Hosts) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -45,10 +47,12 @@
 </head>
   <body class="bg-gray-50 font-sans text-slate-800">
     <div id="root">
-      <div class="min-h-screen flex items-center justify-center text-gray-500">
-        جاري تحميل المتجر...
+      <div class="min-h-screen flex items-center justify-center text-gray-500 flex-col gap-4">
+        <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p>جاري تحميل المتجر...</p>
       </div>
     </div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- Changed to text/babel for browser compilation -->
+    <script type="text/babel" data-presets="react,typescript" src="./index.tsx"></script>
   </body>
 </html>

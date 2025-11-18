@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Product, CartItem, Category } from './types';
-import { Navbar } from './components/Navbar';
-import { ProductCard } from './components/ProductCard';
-import { ProductDetails } from './components/ProductDetails';
-import { CartDrawer } from './components/CartDrawer';
-import { AdminDashboard } from './components/AdminDashboard';
+import { Product, CartItem, Category, ShippingZone } from './types.ts';
+import { Navbar } from './components/Navbar.tsx';
+import { ProductCard } from './components/ProductCard.tsx';
+import { ProductDetails } from './components/ProductDetails.tsx';
+import { CartDrawer } from './components/CartDrawer.tsx';
+import { AdminDashboard } from './components/AdminDashboard.tsx';
 import { Facebook, Instagram, Phone, Mail } from 'lucide-react';
 
 // Initial Mock Data
@@ -64,10 +64,18 @@ const CATEGORIES: Category[] = [
     { id: '6', name: 'عام' }
 ];
 
+const INITIAL_ZONES: ShippingZone[] = [
+  { id: '1', wilaya: 'الجزائر', baladiya: 'الكل', price: 400 },
+  { id: '2', wilaya: 'وهران', baladiya: 'الكل', price: 600 },
+  { id: '3', wilaya: 'قسنطينة', baladiya: 'الكل', price: 600 },
+  { id: '4', wilaya: 'الجنوب', baladiya: 'الكل', price: 900 },
+];
+
 function App() {
   // State
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [shippingZones, setShippingZones] = useState<ShippingZone[]>(INITIAL_ZONES);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminMode, setAdminMode] = useState(false);
@@ -80,7 +88,6 @@ function App() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
-    // Also load products if we were persisting them (omitted for simplicity of demo reset)
   }, []);
 
   // Save cart
@@ -106,6 +113,10 @@ function App() {
 
   const removeFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   const handleAddProduct = (newProduct: Product) => {
@@ -140,6 +151,8 @@ function App() {
         onClose={() => setIsCartOpen(false)} 
         cart={cart} 
         removeFromCart={removeFromCart}
+        shippingZones={shippingZones}
+        onClearCart={clearCart}
       />
 
       {selectedProduct && (
@@ -156,9 +169,11 @@ function App() {
           <AdminDashboard 
             products={products}
             categories={CATEGORIES}
+            shippingZones={shippingZones}
             onAddProduct={handleAddProduct}
             onUpdateProduct={handleUpdateProduct}
             onDeleteProduct={handleDeleteProduct}
+            onUpdateZones={setShippingZones}
           />
         ) : (
           // Store Front
@@ -175,7 +190,6 @@ function App() {
                 </button>
               </div>
               <div className="hidden md:block relative z-10">
-                  {/* Abstract shape or image placeholder */}
                   <div className="w-64 h-64 bg-gradient-to-tr from-primary to-emerald-300 rounded-full blur-3xl opacity-20 absolute -top-10 -left-10"></div>
                   <img src="https://picsum.photos/id/160/300/300" className="rounded-2xl shadow-2xl rotate-3 border-4 border-white/10" alt="Hero" />
               </div>

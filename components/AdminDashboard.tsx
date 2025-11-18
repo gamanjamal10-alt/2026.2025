@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Product, Category } from '../types';
+import { Product, Category, ShippingZone } from '../types.ts';
 import { Trash2, Edit, Plus, Sparkles, TrendingUp, Share2, Package, MapPin } from 'lucide-react';
-import { generateProductDescription, suggestMarketingPost } from '../services/geminiService';
+import { generateProductDescription, suggestMarketingPost } from '../services/geminiService.ts';
 
 interface AdminDashboardProps {
   products: Product[];
   categories: Category[];
+  shippingZones: ShippingZone[];
   onAddProduct: (p: Product) => void;
   onUpdateProduct: (p: Product) => void;
   onDeleteProduct: (id: string) => void;
+  onUpdateZones: (zones: ShippingZone[]) => void;
 }
 
 // Mock data for the chart
@@ -25,14 +27,16 @@ const salesData = [
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   products,
   categories,
+  shippingZones,
   onAddProduct,
   onUpdateProduct,
-  onDeleteProduct
+  onDeleteProduct,
+  onUpdateZones
 }) => {
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'guide'>('products');
   const [isEditing, setIsEditing] = useState<Product | null>(null);
   
-  // Form State
+  // Form State for Product
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     price: 0,
@@ -44,13 +48,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     stock: 10
   });
 
+  // State for Shipping Zone Form
+  const [zoneForm, setZoneForm] = useState({ wilaya: '', baladiya: '', price: 400 });
+
   const [loadingAI, setLoadingAI] = useState(false);
   const [marketingPopup, setMarketingPopup] = useState<string | null>(null);
 
-  const handleSave = () => {
+  // --- Product Handlers ---
+  const handleSaveProduct = () => {
     if (!formData.name || !formData.price) return;
 
-    // Fallback for ID generation if crypto.randomUUID is not available
     const generateId = () => {
       if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID();
@@ -72,10 +79,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     
     setIsEditing(null);
-    resetForm();
+    resetProductForm();
   };
 
-  const resetForm = () => {
+  const resetProductForm = () => {
     setFormData({
         name: '',
         price: 0,
@@ -88,6 +95,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   };
 
+  // --- Shipping Handlers ---
+  const handleAddZone = () => {
+      if (!zoneForm.wilaya || !zoneForm.price) return;
+      const newZone: ShippingZone = {
+          id: Date.now().toString(),
+          wilaya: zoneForm.wilaya,
+          baladiya: zoneForm.baladiya || 'الكل',
+          price: Number(zoneForm.price)
+      };
+      onUpdateZones([...shippingZones, newZone]);
+      setZoneForm({ wilaya: '', baladiya: '', price: 400 });
+  };
+
+  const handleDeleteZone = (id: string) => {
+      onUpdateZones(shippingZones.filter(z => z.id !== id));
+  };
+
+  // --- AI Handlers ---
   const handleGenerateDescription = async () => {
     if (!formData.name) return alert("يرجى إدخال اسم المنتج أولاً");
     
@@ -257,14 +282,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 <div className="flex gap-2 pt-4">
                   <button 
-                    onClick={handleSave}
+                    onClick={handleSaveProduct}
                     className="flex-1 bg-primary text-white py-2 rounded-lg font-bold hover:bg-emerald-600 transition-colors"
                   >
                     {isEditing ? 'حفظ التعديلات' : 'إضافة المنتج'}
                   </button>
                   {isEditing && (
                     <button 
-                      onClick={() => {setIsEditing(null); resetForm();}}
+                      onClick={() => {setIsEditing(null); resetProductForm();}}
                       className="px-4 bg-gray-200 text-gray-700 rounded-lg"
                     >
                       إلغاء
@@ -319,7 +344,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       أداء المبيعات (تجريبي)
                   </h3>
                   <div className="h-64 w-full flex items-end justify-between gap-2 px-4 pb-4 border-b border-l border-gray-100">
-                    {/* Robust CSS Bar Chart instead of Recharts */}
                     {salesData.map((data, idx) => (
                       <div key={idx} className="flex flex-col items-center gap-2 w-full group">
                         <div 
@@ -351,38 +375,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <MapPin className="text-primary" />
                     إعدادات التوصيل (الولايات)
                 </h3>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span>الجزائر العاصمة (العاصمة)</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">400 د.ج</span>
-                            <button className="text-blue-500 text-sm">تعديل</button>
-                        </div>
+                
+                {/* Add Zone Form */}
+                <div className="bg-gray-50 p-4 rounded-xl mb-6">
+                    <h4 className="font-bold text-sm mb-3">إضافة منطقة جديدة</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                        <input 
+                            type="text" 
+                            placeholder="الولاية (مثال: الجزائر)" 
+                            className="p-2 rounded-lg border border-gray-200 text-sm"
+                            value={zoneForm.wilaya}
+                            onChange={e => setZoneForm({...zoneForm, wilaya: e.target.value})}
+                        />
+                         <input 
+                            type="number" 
+                            placeholder="السعر" 
+                            className="p-2 rounded-lg border border-gray-200 text-sm"
+                            value={zoneForm.price}
+                            onChange={e => setZoneForm({...zoneForm, price: Number(e.target.value)})}
+                        />
+                        <button 
+                            onClick={handleAddZone}
+                            className="bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800"
+                        >
+                            إضافة
+                        </button>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span>وهران</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">600 د.ج</span>
-                            <button className="text-blue-500 text-sm">تعديل</button>
+                </div>
+
+                <div className="space-y-3">
+                    {shippingZones.map(zone => (
+                         <div key={zone.id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
+                            <div>
+                                <span className="font-bold text-gray-800">{zone.wilaya}</span>
+                                <span className="text-gray-400 text-xs mx-2">|</span>
+                                <span className="text-sm text-gray-500">{zone.baladiya}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="font-bold text-primary">{zone.price} د.ج</span>
+                                <button 
+                                    onClick={() => handleDeleteZone(zone.id)}
+                                    className="text-red-400 hover:text-red-600 text-sm"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span>قسنطينة</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">600 د.ج</span>
-                            <button className="text-blue-500 text-sm">تعديل</button>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span>الولايات الجنوبية</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold">900 د.ج</span>
-                            <button className="text-blue-500 text-sm">تعديل</button>
-                        </div>
-                    </div>
-                    <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition-colors">
-                        + إضافة منطقة توصيل جديدة
-                    </button>
+                    ))}
+                    {shippingZones.length === 0 && (
+                        <div className="text-center py-4 text-gray-400 text-sm">لا توجد مناطق توصيل مضافة.</div>
+                    )}
                 </div>
             </div>
         )}
@@ -393,8 +435,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                  <ul className="list-disc space-y-2 pr-5">
                      <li><strong>إضافة المنتجات:</strong> استخدم تبويب "إدارة المنتجات". تأكد من إضافة صور جذابة ووصف دقيق. يمكنك استخدام زر "الذكاء الاصطناعي" لكتابة وصف احترافي.</li>
                      <li><strong>المقاسات والألوان:</strong> افصل بين المقاسات بفواصل (مثل: S, M, L). ستظهر كأزرار اختيار للعميل.</li>
-                     <li><strong>التسويق:</strong> في قائمة المنتجات، اضغط على أيقونة "مشاركة" للحصول على نص إعلاني جاهز لمنصات التواصل الاجتماعي.</li>
-                     <li><strong>الطلبات:</strong> تابع حالة الطلبات من تبويب "الطلبات" وقم بتحديث الحالة عند الشحن.</li>
+                     <li><strong>مناطق الشحن:</strong> انتقل لتبويب "إعدادات الشحن" لإضافة الولايات وأسعار التوصيل الخاصة بكل منطقة. ستظهر هذه الخيارات للعميل عند إتمام الطلب.</li>
                  </ul>
              </div>
         )}

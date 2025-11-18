@@ -1,12 +1,14 @@
-import React from 'react';
-import { CartItem } from '../types';
-import { X, Trash2, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { CartItem, ShippingZone } from '../types.ts';
+import { X, Trash2, MapPin, CheckCircle, ArrowRight } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
   removeFromCart: (id: string) => void;
+  shippingZones: ShippingZone[];
+  onClearCart: () => void;
 }
 
 const ShoppingBagIcon = ({size}: {size: number}) => (
@@ -26,61 +28,164 @@ const ShoppingBagIcon = ({size}: {size: number}) => (
   </svg>
 );
 
-export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, removeFromCart }) => {
+export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, removeFromCart, shippingZones, onClearCart }) => {
+  const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
+  const [checkoutForm, setCheckoutForm] = useState({
+    name: '',
+    phone: '',
+    wilayaId: '',
+    address: ''
+  });
+
+  const selectedZone = shippingZones.find(z => z.id === checkoutForm.wilayaId);
+  const shippingCost = selectedZone ? selectedZone.price : 0;
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const shipping = 400; // Fixed for demo
-  const total = subtotal + shipping;
+  const total = subtotal + shippingCost;
+
+  const handleCompleteOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, you would send this data to a backend
+    console.log('Order submitted:', { cart, customer: checkoutForm, total });
+    setStep('success');
+    setTimeout(() => {
+      onClearCart();
+    }, 500);
+  };
+
+  const resetAndClose = () => {
+    setStep('cart');
+    setCheckoutForm({ name: '', phone: '', wilayaId: '', address: '' });
+    onClose();
+  };
 
   return (
     <div className={`fixed inset-0 z-[70] transition-visibility duration-300 ${isOpen ? 'visible' : 'invisible'}`}>
       <div 
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        onClick={onClose}
+        onClick={resetAndClose}
       ></div>
       <div className={`absolute top-0 left-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
         <div className="flex flex-col h-full">
           <div className="p-5 border-b flex justify-between items-center bg-gray-50">
-            <h2 className="text-xl font-bold text-gray-800">سلة المشتريات ({cart.length})</h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <h2 className="text-xl font-bold text-gray-800">
+              {step === 'cart' && `سلة المشتريات (${cart.length})`}
+              {step === 'checkout' && 'معلومات التوصيل'}
+              {step === 'success' && 'تم الطلب بنجاح'}
+            </h2>
+            <button onClick={resetAndClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
               <X size={24} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                  <ShoppingBagIcon size={32} />
-                </div>
-                <p>السلة فارغة</p>
-                <button onClick={onClose} className="text-primary font-bold hover:underline">تصفح المنتجات</button>
-              </div>
-            ) : (
-              cart.map((item, idx) => (
-                <div key={`${item.id}-${idx}`} className="flex gap-4 bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
-                  <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg bg-gray-100" />
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {item.selectedSize && <span className="bg-gray-100 px-1 rounded ml-1">{item.selectedSize}</span>}
-                        {item.selectedColor && <span className="bg-gray-100 px-1 rounded">{item.selectedColor}</span>}
+          <div className="flex-1 overflow-y-auto p-5">
+            
+            {/* --- Step 1: Cart Items --- */}
+            {step === 'cart' && (
+              <div className="space-y-4">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+                      <ShoppingBagIcon size={32} />
+                    </div>
+                    <p>السلة فارغة</p>
+                    <button onClick={resetAndClose} className="text-primary font-bold hover:underline">تصفح المنتجات</button>
+                  </div>
+                ) : (
+                  cart.map((item, idx) => (
+                    <div key={`${item.id}-${idx}`} className="flex gap-4 bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
+                      <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg bg-gray-100" />
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</h3>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {item.selectedSize && <span className="bg-gray-100 px-1 rounded ml-1">{item.selectedSize}</span>}
+                            {item.selectedColor && <span className="bg-gray-100 px-1 rounded">{item.selectedColor}</span>}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <span className="font-bold text-primary">{item.price.toLocaleString()} د.ج</span>
+                          <div className="flex items-center gap-2">
+                             <span className="text-xs text-gray-400">x{item.quantity}</span>
+                             <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600">
+                               <Trash2 size={18} />
+                             </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex justify-between items-end">
-                      <span className="font-bold text-primary">{item.price.toLocaleString()} د.ج</span>
-                      <button onClick={() => removeFromCart(item.id)} className="text-red-400 hover:text-red-600">
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* --- Step 2: Checkout Form --- */}
+            {step === 'checkout' && (
+              <form id="checkout-form" onSubmit={handleCompleteOrder} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
+                  <input 
+                    required 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
+                    value={checkoutForm.name}
+                    onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})}
+                  />
                 </div>
-              ))
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
+                  <input 
+                    required 
+                    type="tel" 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
+                    value={checkoutForm.phone}
+                    onChange={e => setCheckoutForm({...checkoutForm, phone: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">الولاية</label>
+                  <select 
+                    required 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none bg-white"
+                    value={checkoutForm.wilayaId}
+                    onChange={e => setCheckoutForm({...checkoutForm, wilayaId: e.target.value})}
+                  >
+                    <option value="">اختر الولاية...</option>
+                    {shippingZones.map(zone => (
+                      <option key={zone.id} value={zone.id}>{zone.wilaya} - {zone.price} د.ج</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">العنوان بالتفصيل</label>
+                  <textarea 
+                    required 
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
+                    value={checkoutForm.address}
+                    onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})}
+                  ></textarea>
+                </div>
+              </form>
+            )}
+
+            {/* --- Step 3: Success --- */}
+            {step === 'success' && (
+              <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce">
+                  <CheckCircle size={48} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800">شكراً لطلبك!</h3>
+                <p className="text-gray-500 max-w-xs">تم استلام طلبك بنجاح. سيتصل بك فريقنا قريباً لتأكيد الطلب والتوصيل.</p>
+                <button onClick={resetAndClose} className="bg-primary text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-600">
+                  العودة للمتجر
+                </button>
+              </div>
             )}
           </div>
 
-          {cart.length > 0 && (
+          {/* Footer Actions */}
+          {step !== 'success' && cart.length > 0 && (
             <div className="p-6 bg-gray-50 border-t">
               <div className="space-y-2 mb-4 text-sm">
                 <div className="flex justify-between text-gray-600">
@@ -88,22 +193,40 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                   <span>{subtotal.toLocaleString()} د.ج</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>التوصيل (تقديري)</span>
-                  <span>{shipping.toLocaleString()} د.ج</span>
+                  <span>التوصيل ({selectedZone?.wilaya || 'غير محدد'})</span>
+                  <span>{step === 'checkout' ? shippingCost : '--'} د.ج</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold text-lg text-gray-900">
                   <span>الإجمالي</span>
-                  <span>{total.toLocaleString()} د.ج</span>
+                  <span>{step === 'checkout' ? total.toLocaleString() : subtotal.toLocaleString()} د.ج</span>
                 </div>
               </div>
               
-              <button className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
-                إتمام الطلب
-              </button>
-              <p className="text-xs text-gray-500 text-center mt-3 flex items-center justify-center gap-1">
-                <MapPin size={12} />
-                التوصيل متاح لـ 58 ولاية
-              </p>
+              {step === 'cart' ? (
+                <button 
+                  onClick={() => setStep('checkout')}
+                  className="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  إتمام الطلب
+                  <ArrowRight size={18} />
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setStep('cart')}
+                    className="px-4 py-3 rounded-xl font-bold text-gray-600 bg-gray-200 hover:bg-gray-300"
+                  >
+                    رجوع
+                  </button>
+                  <button 
+                    type="submit"
+                    form="checkout-form"
+                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                  >
+                    تأكيد الطلب
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
