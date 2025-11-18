@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Product, Category, ShippingZone } from '../types.ts';
 import { Trash2, Edit, Plus, Sparkles, TrendingUp, Share2, Package, MapPin, Save } from 'lucide-react';
@@ -49,12 +48,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     stock: 10
   });
 
-  // State for Shipping Zone Form - Changed price to accept string initially for better input handling
-  const [zoneForm, setZoneForm] = useState<{wilaya: string, baladiya: string, price: string | number}>({ 
-    wilaya: '', 
-    baladiya: '', 
-    price: 400 
-  });
+  // State for Shipping Zone Form
+  const [zoneWilaya, setZoneWilaya] = useState('');
+  const [zonePrice, setZonePrice] = useState('400');
 
   const [loadingAI, setLoadingAI] = useState(false);
   const [marketingPopup, setMarketingPopup] = useState<string | null>(null);
@@ -101,32 +97,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- Shipping Handlers ---
-  const handleAddZone = (e?: React.MouseEvent) => {
-      if (e) e.preventDefault(); // Prevent form submission if inside a form
-
-      if (!zoneForm.wilaya || zoneForm.wilaya.trim() === '') {
+  const handleAddZone = () => {
+      if (!zoneWilaya.trim()) {
           alert("يرجى كتابة اسم الولاية");
           return;
       }
-      
-      // Handle price conversion safely
-      let finalPrice = 0;
-      if (zoneForm.price !== '' && zoneForm.price !== null) {
-          finalPrice = Number(zoneForm.price);
-      }
+
+      const priceValue = parseInt(zonePrice) || 0;
 
       const newZone: ShippingZone = {
-          id: Date.now().toString() + Math.random().toString().slice(2, 5),
-          wilaya: zoneForm.wilaya,
-          baladiya: zoneForm.baladiya || 'الكل',
-          price: finalPrice
+          id: Date.now().toString(),
+          wilaya: zoneWilaya,
+          baladiya: 'الكل',
+          price: priceValue
       };
       
       // Update parent state
       onUpdateZones([...shippingZones, newZone]);
       
       // Reset form
-      setZoneForm({ wilaya: '', baladiya: '', price: 400 });
+      setZoneWilaya('');
+      setZonePrice('400');
   };
 
   const handleDeleteZone = (id: string) => {
@@ -405,7 +396,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     إعدادات التوصيل (الولايات)
                 </h3>
                 
-                {/* Add Zone Form */}
+                {/* Add Zone Form - Simplified logic */}
                 <div className="bg-gray-50 p-5 rounded-xl mb-8 border border-gray-100">
                     <h4 className="font-bold text-gray-800 text-sm mb-4">إضافة منطقة توصيل جديدة</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -415,8 +406,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 type="text" 
                                 placeholder="مثال: الجزائر" 
                                 className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none bg-white"
-                                value={zoneForm.wilaya}
-                                onChange={e => setZoneForm({...zoneForm, wilaya: e.target.value})}
+                                value={zoneWilaya}
+                                onChange={e => setZoneWilaya(e.target.value)}
                             />
                         </div>
                         <div className="md:col-span-1">
@@ -425,8 +416,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 type="number" 
                                 placeholder="0" 
                                 className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none bg-white"
-                                value={zoneForm.price}
-                                onChange={e => setZoneForm({...zoneForm, price: e.target.value})}
+                                value={zonePrice}
+                                onChange={e => setZonePrice(e.target.value)}
                             />
                         </div>
                         <div className="md:col-span-1 flex items-end">
@@ -436,7 +427,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               className="w-full bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-2.5 shadow-md"
                           >
                               <Plus size={16} />
-                              إضافة المنطقة
+                              إضافة
                           </button>
                         </div>
                     </div>
@@ -453,7 +444,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                                 <div>
                                     <div className="font-bold text-gray-800">{zone.wilaya}</div>
-                                    <div className="text-xs text-gray-500">{zone.baladiya === 'الكل' ? 'كافة البلديات' : zone.baladiya}</div>
+                                    <div className="text-xs text-gray-500">توصيل عادي</div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -473,7 +464,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                     {shippingZones.length === 0 && (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-gray-400 text-sm">
-                            لا توجد مناطق توصيل مضافة. قم بإضافة الولاية والسعر أعلاه.
+                            لا توجد مناطق توصيل مضافة.
                         </div>
                     )}
                 </div>

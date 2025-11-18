@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Product, CartItem, Category, ShippingZone } from './types.ts';
 import { Navbar } from './components/Navbar.tsx';
@@ -85,6 +84,7 @@ function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState(false);
+  const [footerClickCount, setFooterClickCount] = useState(0);
   
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -140,11 +140,23 @@ function App() {
   };
 
   // --- Auth Handlers ---
-  const handleSecretLoginTrigger = () => {
+  const handleFooterClick = () => {
     if (isAdminMode) return;
-    setShowLoginModal(true);
-    setPasswordInput('');
-    setLoginError(false);
+    
+    setFooterClickCount(prev => prev + 1);
+    
+    // Require 3 clicks within a short time to open admin login
+    if (footerClickCount + 1 === 3) {
+        setShowLoginModal(true);
+        setPasswordInput('');
+        setLoginError(false);
+        setFooterClickCount(0);
+    }
+
+    // Reset counter after 2 seconds if not clicked enough
+    setTimeout(() => {
+        setFooterClickCount(0);
+    }, 2000);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -173,7 +185,7 @@ function App() {
         cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} 
         toggleCart={() => setIsCartOpen(!isCartOpen)}
         isAdminMode={isAdminMode}
-        onAdminClick={() => {}} // No visible button, unused in navbar
+        onAdminClick={() => {}} 
         onLogout={handleLogout}
       />
 
@@ -343,13 +355,9 @@ function App() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-gray-400">
-            {/* 
-              SECRET ADMIN ACCESS: 
-              Double-click the copyright text below to open admin login.
-              This is hidden from normal users.
-            */}
+            {/* SECRET ADMIN ACCESS: Click 3 times here */}
             <span 
-                onDoubleClick={handleSecretLoginTrigger} 
+                onClick={handleFooterClick} 
                 className="cursor-default select-none"
                 title=" "
             >

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CartItem, ShippingZone } from '../types.ts';
 import { X, Trash2, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
@@ -31,7 +30,6 @@ const ShoppingBagIcon = ({size}: {size: number}) => (
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, removeFromCart, shippingZones, onClearCart }) => {
   const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
     name: '',
     phone: '',
@@ -63,15 +61,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
          return;
      }
 
-     // 2. Proceed
-     setIsSubmitting(true);
-
-     // Simulate API call
-     setTimeout(() => {
-        console.log('Order submitted:', { cart, customer: checkoutForm, total });
-        setIsSubmitting(false);
-        setStep('success');
-     }, 1500);
+     // 2. Proceed Immediately (No artificial delay)
+     console.log('Order submitted:', { cart, customer: checkoutForm, total });
+     setStep('success');
   };
 
   const resetAndClose = () => {
@@ -80,8 +72,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
         onClearCart();
     }
     
-    // Small delay to allow drawer to close before resetting state visually
     onClose();
+    // Reset state after animation
     setTimeout(() => {
         setStep('cart');
         setCheckoutForm({ name: '', phone: '', wilayaId: '', address: '' });
@@ -261,25 +253,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                   <button 
                     type="button"
                     onClick={() => setStep('cart')}
-                    disabled={isSubmitting}
-                    className="px-4 py-3 rounded-xl font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                    className="px-4 py-3 rounded-xl font-bold text-gray-600 bg-gray-200 hover:bg-gray-300"
                   >
                     رجوع
                   </button>
                   <button 
                     type="button"
                     onClick={handleManualSubmit}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                   >
-                    {isSubmitting ? (
-                        <>
-                            <Loader2 size={18} className="animate-spin" />
-                            جاري الطلب...
-                        </>
-                    ) : (
-                        'تأكيد الطلب'
-                    )}
+                    تأكيد الطلب
                   </button>
                 </div>
               )}
