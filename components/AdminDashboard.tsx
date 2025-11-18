@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Product, Category, ShippingZone } from '../types.ts';
-import { Trash2, Edit, Plus, Sparkles, TrendingUp, Share2, Package, MapPin } from 'lucide-react';
+import { Trash2, Edit, Plus, Sparkles, TrendingUp, Share2, Package, MapPin, Save } from 'lucide-react';
 import { generateProductDescription, suggestMarketingPost } from '../services/geminiService.ts';
 
 interface AdminDashboardProps {
@@ -97,7 +98,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // --- Shipping Handlers ---
   const handleAddZone = () => {
-      if (!zoneForm.wilaya || !zoneForm.price) return;
+      if (!zoneForm.wilaya || !zoneForm.price) {
+          alert("يرجى ملء اسم الولاية والسعر");
+          return;
+      }
       const newZone: ShippingZone = {
           id: Date.now().toString(),
           wilaya: zoneForm.wilaya,
@@ -109,7 +113,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleDeleteZone = (id: string) => {
-      onUpdateZones(shippingZones.filter(z => z.id !== id));
+      if (window.confirm("هل أنت متأكد من حذف منطقة الشحن هذه؟")) {
+        onUpdateZones(shippingZones.filter(z => z.id !== id));
+      }
   };
 
   // --- AI Handlers ---
@@ -136,29 +142,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Sub-header for Admin */}
-      <div className="bg-white border-b px-4 py-4 mb-6">
-        <div className="max-w-7xl mx-auto flex gap-4 overflow-x-auto no-scrollbar">
+      <div className="bg-white border-b px-4 py-4 mb-6 sticky top-16 z-30">
+        <div className="max-w-7xl mx-auto flex gap-2 overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveTab('products')}
-            className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${activeTab === 'products' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
+            className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'products' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             إدارة المنتجات
           </button>
           <button 
-             onClick={() => setActiveTab('orders')}
-             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${activeTab === 'orders' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            الطلبات والإحصائيات
-          </button>
-          <button 
              onClick={() => setActiveTab('settings')}
-             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${activeTab === 'settings' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
+             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'settings' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
              إعدادات الشحن (الولايات)
           </button>
           <button 
+             onClick={() => setActiveTab('orders')}
+             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            الطلبات والإحصائيات
+          </button>
+          <button 
              onClick={() => setActiveTab('guide')}
-             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ${activeTab === 'guide' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
+             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${activeTab === 'guide' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
              دليل الاستخدام
           </button>
@@ -184,7 +190,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === 'products' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Form Section */}
-            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm h-fit sticky top-24">
+            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm h-fit sticky top-32">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                 {isEditing ? <Edit size={20}/> : <Plus size={20}/>}
                 {isEditing ? 'تعديل المنتج' : 'إضافة منتج جديد'}
@@ -198,6 +204,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="مثال: ساعة ذكية"
                   />
                 </div>
                 
@@ -302,36 +309,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* List Section */}
             <div className="lg:col-span-2 space-y-4">
               {products.map(product => (
-                <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-start sm:items-center group">
                   <img src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded-lg" />
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-800">{product.name}</h3>
+                    <h3 className="font-bold text-gray-800 group-hover:text-primary transition-colors">{product.name}</h3>
                     <p className="text-sm text-gray-500">{product.category} • مخزون: {product.stock}</p>
                     <p className="font-bold text-primary mt-1">{product.price.toLocaleString()} د.ج</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto justify-end">
                     <button 
                       onClick={() => handleMarketingPost(product.name)}
-                      className="p-2 text-purple-500 hover:bg-purple-50 rounded-lg"
+                      className="p-2 text-purple-500 hover:bg-purple-50 rounded-lg transition-colors"
                       title="تسويق ذكي"
                     >
                       <Share2 size={18} />
                     </button>
                     <button 
                       onClick={() => {setIsEditing(product); setFormData(product);}}
-                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       <Edit size={18} />
                     </button>
                     <button 
                       onClick={() => onDeleteProduct(product.id)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
               ))}
+              {products.length === 0 && (
+                <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+                    <p className="text-gray-500">لم تقم بإضافة أي منتجات بعد.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -377,53 +389,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </h3>
                 
                 {/* Add Zone Form */}
-                <div className="bg-gray-50 p-4 rounded-xl mb-6">
-                    <h4 className="font-bold text-sm mb-3">إضافة منطقة جديدة</h4>
-                    <div className="grid grid-cols-3 gap-3">
-                        <input 
-                            type="text" 
-                            placeholder="الولاية (مثال: الجزائر)" 
-                            className="p-2 rounded-lg border border-gray-200 text-sm"
-                            value={zoneForm.wilaya}
-                            onChange={e => setZoneForm({...zoneForm, wilaya: e.target.value})}
-                        />
-                         <input 
-                            type="number" 
-                            placeholder="السعر" 
-                            className="p-2 rounded-lg border border-gray-200 text-sm"
-                            value={zoneForm.price}
-                            onChange={e => setZoneForm({...zoneForm, price: Number(e.target.value)})}
-                        />
+                <div className="bg-gray-50 p-5 rounded-xl mb-8 border border-gray-100">
+                    <h4 className="font-bold text-gray-800 text-sm mb-4">إضافة منطقة توصيل جديدة</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="md:col-span-1">
+                            <input 
+                                type="text" 
+                                placeholder="الولاية (مثال: الجزائر)" 
+                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none"
+                                value={zoneForm.wilaya}
+                                onChange={e => setZoneForm({...zoneForm, wilaya: e.target.value})}
+                            />
+                        </div>
+                        <div className="md:col-span-1">
+                             <input 
+                                type="number" 
+                                placeholder="سعر التوصيل (د.ج)" 
+                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none"
+                                value={zoneForm.price}
+                                onChange={e => setZoneForm({...zoneForm, price: Number(e.target.value)})}
+                            />
+                        </div>
                         <button 
                             onClick={handleAddZone}
-                            className="bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800"
+                            className="md:col-span-1 bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-2 md:py-0"
                         >
+                            <Plus size={16} />
                             إضافة
                         </button>
                     </div>
                 </div>
 
                 <div className="space-y-3">
+                    <h4 className="font-bold text-gray-800 text-sm mb-2">المناطق المضافة ({shippingZones.length})</h4>
                     {shippingZones.map(zone => (
-                         <div key={zone.id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm">
-                            <div>
-                                <span className="font-bold text-gray-800">{zone.wilaya}</span>
-                                <span className="text-gray-400 text-xs mx-2">|</span>
-                                <span className="text-sm text-gray-500">{zone.baladiya}</span>
+                         <div key={zone.id} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-primary/10 p-2 rounded-full text-primary">
+                                    <MapPin size={18} />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-gray-800">{zone.wilaya}</div>
+                                    <div className="text-xs text-gray-500">{zone.baladiya === 'الكل' ? 'كافة البلديات' : zone.baladiya}</div>
+                                </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className="font-bold text-primary">{zone.price} د.ج</span>
+                                <span className="font-bold text-primary bg-primary/5 px-3 py-1 rounded-full text-sm">{zone.price} د.ج</span>
                                 <button 
                                     onClick={() => handleDeleteZone(zone.id)}
-                                    className="text-red-400 hover:text-red-600 text-sm"
+                                    className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                    title="حذف المنطقة"
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={18} />
                                 </button>
                             </div>
                         </div>
                     ))}
                     {shippingZones.length === 0 && (
-                        <div className="text-center py-4 text-gray-400 text-sm">لا توجد مناطق توصيل مضافة.</div>
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-gray-400 text-sm">
+                            لا توجد مناطق توصيل مضافة. قم بإضافة الولاية والسعر أعلاه.
+                        </div>
                     )}
                 </div>
             </div>

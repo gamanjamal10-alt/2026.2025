@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { CartItem, ShippingZone } from '../types.ts';
-import { X, Trash2, MapPin, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, Trash2, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ const ShoppingBagIcon = ({size}: {size: number}) => (
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, removeFromCart, shippingZones, onClearCart }) => {
   const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
     name: '',
     phone: '',
@@ -44,18 +46,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
 
   const handleCompleteOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would send this data to a backend
-    console.log('Order submitted:', { cart, customer: checkoutForm, total });
-    setStep('success');
+    
+    if (!checkoutForm.wilayaId) {
+        alert('يرجى اختيار الولاية لحساب سعر التوصيل');
+        return;
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate API call / Order processing
     setTimeout(() => {
-      onClearCart();
-    }, 500);
+        console.log('Order submitted:', { cart, customer: checkoutForm, total });
+        setIsSubmitting(false);
+        setStep('success');
+    }, 1500);
   };
 
   const resetAndClose = () => {
-    setStep('cart');
-    setCheckoutForm({ name: '', phone: '', wilayaId: '', address: '' });
+    // If we are closing after a success, clear the cart now
+    if (step === 'success') {
+        onClearCart();
+    }
+    
+    // Small delay to allow drawer to close before resetting state visually
     onClose();
+    setTimeout(() => {
+        setStep('cart');
+        setCheckoutForm({ name: '', phone: '', wilayaId: '', address: '' });
+    }, 300);
   };
 
   return (
@@ -127,6 +145,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                   <input 
                     required 
                     type="text" 
+                    placeholder="أدخل اسمك الثلاثي"
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
                     value={checkoutForm.name}
                     onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})}
@@ -137,30 +156,44 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                   <input 
                     required 
                     type="tel" 
+                    placeholder="05XXXXXXXX"
+                    pattern="[0-9]{10}"
+                    title="يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام"
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
                     value={checkoutForm.phone}
                     onChange={e => setCheckoutForm({...checkoutForm, phone: e.target.value})}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">الولاية</label>
-                  <select 
-                    required 
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none bg-white"
-                    value={checkoutForm.wilayaId}
-                    onChange={e => setCheckoutForm({...checkoutForm, wilayaId: e.target.value})}
-                  >
-                    <option value="">اختر الولاية...</option>
-                    {shippingZones.map(zone => (
-                      <option key={zone.id} value={zone.id}>{zone.wilaya} - {zone.price} د.ج</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">الولاية (الشحن)</label>
+                  <div className="relative">
+                    <select 
+                        required 
+                        className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none bg-white appearance-none"
+                        value={checkoutForm.wilayaId}
+                        onChange={e => setCheckoutForm({...checkoutForm, wilayaId: e.target.value})}
+                    >
+                        <option value="" disabled>اختر الولاية...</option>
+                        {shippingZones.map(zone => (
+                        <option key={zone.id} value={zone.id}>
+                            {zone.wilaya} - {zone.price} د.ج
+                        </option>
+                        ))}
+                    </select>
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500">
+                        <ArrowRight size={14} className="rotate-90" />
+                    </div>
+                  </div>
+                  {shippingZones.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1">لا توجد مناطق شحن مضافة حالياً. يرجى الاتصال بالدعم.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">العنوان بالتفصيل</label>
                   <textarea 
                     required 
                     rows={2}
+                    placeholder="البلدية، الحي، رقم المنزل..."
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
                     value={checkoutForm.address}
                     onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})}
@@ -171,13 +204,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
 
             {/* --- Step 3: Success --- */}
             {step === 'success' && (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+              <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-fade-in">
                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce">
                   <CheckCircle size={48} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">شكراً لطلبك!</h3>
                 <p className="text-gray-500 max-w-xs">تم استلام طلبك بنجاح. سيتصل بك فريقنا قريباً لتأكيد الطلب والتوصيل.</p>
-                <button onClick={resetAndClose} className="bg-primary text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-600">
+                <div className="w-full p-4 bg-gray-50 rounded-xl border border-gray-100 text-right text-sm space-y-2">
+                    <p><strong>الاسم:</strong> {checkoutForm.name}</p>
+                    <p><strong>الولاية:</strong> {selectedZone?.wilaya}</p>
+                    <p><strong>المبلغ الإجمالي:</strong> <span className="text-primary font-bold">{total.toLocaleString()} د.ج</span></p>
+                </div>
+                <button onClick={resetAndClose} className="bg-primary text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-600 w-full">
                   العودة للمتجر
                 </button>
               </div>
@@ -186,7 +224,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
 
           {/* Footer Actions */}
           {step !== 'success' && cart.length > 0 && (
-            <div className="p-6 bg-gray-50 border-t">
+            <div className="p-6 bg-gray-50 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
               <div className="space-y-2 mb-4 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>المجموع الفرعي</span>
@@ -194,7 +232,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>التوصيل ({selectedZone?.wilaya || 'غير محدد'})</span>
-                  <span>{step === 'checkout' ? shippingCost : '--'} د.ج</span>
+                  <span className={shippingCost > 0 ? "text-gray-800" : "text-gray-400"}>
+                    {step === 'checkout' ? (shippingCost > 0 ? `${shippingCost} د.ج` : 'مجاني') : '--'}
+                  </span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold text-lg text-gray-900">
                   <span>الإجمالي</span>
@@ -213,17 +253,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
               ) : (
                 <div className="flex gap-2">
                   <button 
+                    type="button"
                     onClick={() => setStep('cart')}
-                    className="px-4 py-3 rounded-xl font-bold text-gray-600 bg-gray-200 hover:bg-gray-300"
+                    disabled={isSubmitting}
+                    className="px-4 py-3 rounded-xl font-bold text-gray-600 bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
                   >
                     رجوع
                   </button>
                   <button 
                     type="submit"
                     form="checkout-form"
-                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    تأكيد الطلب
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 size={18} className="animate-spin" />
+                            جاري الطلب...
+                        </>
+                    ) : (
+                        'تأكيد الطلب'
+                    )}
                   </button>
                 </div>
               )}
