@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Product, Category, ShippingZone } from '../types';
-import { Package, Trash2, Edit, Plus, Image as ImageIcon, MapPin, Sparkles, TrendingUp, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Product, Category } from '../types';
+import { Trash2, Edit, Plus, Sparkles, TrendingUp, Share2, Package, MapPin } from 'lucide-react';
 import { generateProductDescription, suggestMarketingPost } from '../services/geminiService';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -51,9 +50,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSave = () => {
     if (!formData.name || !formData.price) return;
 
+    // Fallback for ID generation if crypto.randomUUID is not available
+    const generateId = () => {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    };
+
     const productToSave = {
       ...formData,
-      id: isEditing ? isEditing.id : crypto.randomUUID(),
+      id: isEditing ? isEditing.id : generateId(),
       sizes: formData.sizes || [],
       colors: formData.colors || [],
     } as Product;
@@ -311,16 +318,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <TrendingUp className="text-primary" />
                       أداء المبيعات (تجريبي)
                   </h3>
-                  <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={salesData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="name" />
-                            <YAxis orientation="right" />
-                            <Tooltip cursor={{fill: '#f3f4f6'}} />
-                            <Bar dataKey="sales" fill="#10b981" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                  <div className="h-64 w-full flex items-end justify-between gap-2 px-4 pb-4 border-b border-l border-gray-100">
+                    {/* Robust CSS Bar Chart instead of Recharts */}
+                    {salesData.map((data, idx) => (
+                      <div key={idx} className="flex flex-col items-center gap-2 w-full group">
+                        <div 
+                          className="w-full bg-primary/20 hover:bg-primary transition-all rounded-t-md relative group-hover:shadow-lg" 
+                          style={{ height: `${(data.sales / 4000) * 100}%`, minHeight: '4px' }}
+                        >
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                            {data.sales} د.ج
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium rotate-45 sm:rotate-0 mt-2">{data.name}</span>
+                      </div>
+                    ))}
                   </div>
               </div>
               <div className="bg-white p-6 rounded-2xl shadow-sm">

@@ -1,10 +1,30 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// Safer access to env variable that doesn't crash if process is undefined
+const getApiKey = () => {
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    console.warn("Environment variable access failed", e);
+  }
+  return '';
+};
+
+const apiKey = getApiKey();
+let ai: GoogleGenAI | null = null;
+
+if (apiKey) {
+    try {
+        ai = new GoogleGenAI({ apiKey });
+    } catch (e) {
+        console.error("Gemini Initialization Error", e);
+    }
+}
 
 export const generateProductDescription = async (productName: string, category: string, features: string): Promise<string> => {
-  if (!apiKey) return "API Key missing. Please configure Gemini API.";
+  if (!ai) return "يرجى ضبط مفتاح API (Gemini) لتفعيل هذه الميزة.";
 
   try {
     const prompt = `
@@ -30,7 +50,7 @@ export const generateProductDescription = async (productName: string, category: 
 };
 
 export const suggestMarketingPost = async (productName: string): Promise<string> => {
-  if (!apiKey) return "";
+  if (!ai) return "";
 
   try {
     const prompt = `Write a short, engaging social media post (Facebook/Instagram) in Arabic to sell this product: ${productName}. Include hashtags.`;
