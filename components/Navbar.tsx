@@ -1,14 +1,15 @@
 import React from 'react';
-import { ShoppingCart, Store, Settings, Menu } from 'lucide-react';
+import { ShoppingCart, Store, Settings, LogOut, Lock } from 'lucide-react';
 
 interface NavbarProps {
   cartCount: number;
   toggleCart: () => void;
   isAdminMode: boolean;
-  setAdminMode: (mode: boolean) => void;
+  onAdminClick: () => void;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMode, setAdminMode }) => {
+export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMode, onAdminClick, onLogout }) => {
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,28 +22,39 @@ export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMo
             <span className="text-xl font-bold text-secondary hidden sm:block">سوق برو</span>
           </div>
 
-          {/* Mode Toggle (For Demo Purpose) */}
-          <div className="flex bg-gray-100 p-1 rounded-lg mx-4">
-            <button
-              onClick={() => setAdminMode(false)}
-              className={`px-4 py-1 text-sm rounded-md transition-colors ${!isAdminMode ? 'bg-white shadow text-primary font-bold' : 'text-gray-500'}`}
-            >
-              المتجر
-            </button>
-            <button
-              onClick={() => setAdminMode(true)}
-              className={`px-4 py-1 text-sm rounded-md transition-colors ${isAdminMode ? 'bg-white shadow text-primary font-bold' : 'text-gray-500'}`}
-            >
-              الإدارة
-            </button>
-          </div>
-
           {/* Actions */}
           <div className="flex items-center gap-4">
+            
+            {/* Store/Admin Toggle */}
+            {!isAdminMode ? (
+              <button
+                onClick={onAdminClick}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <Lock size={16} />
+                <span>دخول الإدارة</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
+                   <Settings size={16} />
+                   <span>لوحة التحكم</span>
+                 </div>
+                 <button
+                  onClick={onLogout}
+                  className="text-gray-500 hover:text-red-500 p-2 transition-colors"
+                  title="تسجيل خروج"
+                 >
+                   <LogOut size={20} />
+                 </button>
+              </div>
+            )}
+
+            {/* Cart Button (Only in Store Mode) */}
             {!isAdminMode && (
               <button 
                 onClick={toggleCart}
-                className="relative p-2 text-gray-600 hover:text-primary transition-colors"
+                className="relative p-2 text-gray-600 hover:text-primary transition-colors border-r border-gray-200 pr-4 mr-2"
               >
                 <ShoppingCart size={24} />
                 {cartCount > 0 && (
@@ -51,13 +63,6 @@ export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMo
                   </span>
                 )}
               </button>
-            )}
-            
-            {isAdminMode && (
-               <div className="flex items-center gap-2 text-gray-500 text-sm">
-                 <Settings size={18} />
-                 <span className="hidden sm:inline">لوحة التحكم</span>
-               </div>
             )}
           </div>
         </div>

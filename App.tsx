@@ -5,7 +5,7 @@ import { ProductCard } from './components/ProductCard.tsx';
 import { ProductDetails } from './components/ProductDetails.tsx';
 import { CartDrawer } from './components/CartDrawer.tsx';
 import { AdminDashboard } from './components/AdminDashboard.tsx';
-import { Facebook, Instagram, Phone, Mail } from 'lucide-react';
+import { Facebook, Instagram, Phone, Mail, Lock, ArrowRight } from 'lucide-react';
 
 // Initial Mock Data
 const INITIAL_PRODUCTS: Product[] = [
@@ -78,7 +78,12 @@ function App() {
   const [shippingZones, setShippingZones] = useState<ShippingZone[]>(INITIAL_ZONES);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // Auth State
   const [isAdminMode, setAdminMode] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -133,6 +138,30 @@ function App() {
     }
   };
 
+  // --- Auth Handlers ---
+  const handleAdminClick = () => {
+    if (isAdminMode) return;
+    setShowLoginModal(true);
+    setPasswordInput('');
+    setLoginError(false);
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Hardcoded password for demo
+    if (passwordInput === 'admin123') {
+      setAdminMode(true);
+      setShowLoginModal(false);
+      setPasswordInput('');
+    } else {
+      setLoginError(true);
+    }
+  };
+
+  const handleLogout = () => {
+    setAdminMode(false);
+  };
+
   const filteredProducts = selectedCategory === 'all' 
     ? products 
     : products.filter(p => p.category === selectedCategory);
@@ -143,8 +172,52 @@ function App() {
         cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} 
         toggleCart={() => setIsCartOpen(!isCartOpen)}
         isAdminMode={isAdminMode}
-        setAdminMode={setAdminMode}
+        onAdminClick={handleAdminClick}
+        onLogout={handleLogout}
       />
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowLoginModal(false)}></div>
+          <div className="bg-white rounded-2xl w-full max-w-md p-8 relative z-10 shadow-2xl animate-fade-in">
+            <div className="flex flex-col items-center mb-6">
+               <div className="bg-primary/10 p-3 rounded-full text-primary mb-3">
+                 <Lock size={32} />
+               </div>
+               <h2 className="text-2xl font-bold text-gray-800">تسجيل دخول المدير</h2>
+               <p className="text-gray-500 text-sm mt-1">أدخل كلمة المرور للوصول للوحة التحكم</p>
+            </div>
+            
+            <form onSubmit={handleLoginSubmit}>
+               <div className="mb-4">
+                 <input 
+                   type="password"
+                   placeholder="كلمة المرور"
+                   autoFocus
+                   className={`w-full border rounded-xl p-3 outline-none focus:ring-2 transition-all ${loginError ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-primary/50'}`}
+                   value={passwordInput}
+                   onChange={e => {setPasswordInput(e.target.value); setLoginError(false)}}
+                 />
+                 {loginError && <p className="text-red-500 text-xs mt-2 font-bold">كلمة المرور غير صحيحة</p>}
+               </div>
+               <button 
+                 type="submit"
+                 className="w-full bg-secondary text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+               >
+                 دخول
+                 <ArrowRight size={18} />
+               </button>
+            </form>
+            <button 
+              onClick={() => setShowLoginModal(false)}
+              className="w-full mt-3 text-gray-500 hover:text-gray-700 text-sm font-medium py-2"
+            >
+              إلغاء
+            </button>
+          </div>
+        </div>
+      )}
 
       <CartDrawer 
         isOpen={isCartOpen} 
