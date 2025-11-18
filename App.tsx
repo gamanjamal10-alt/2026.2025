@@ -140,7 +140,7 @@ function App() {
   };
 
   // --- Auth Handlers ---
-  const handleAdminClick = () => {
+  const handleSecretLoginTrigger = () => {
     if (isAdminMode) return;
     setShowLoginModal(true);
     setPasswordInput('');
@@ -173,7 +173,7 @@ function App() {
         cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)} 
         toggleCart={() => setIsCartOpen(!isCartOpen)}
         isAdminMode={isAdminMode}
-        onAdminClick={handleAdminClick}
+        onAdminClick={() => {}} // No visible button, unused in navbar
         onLogout={handleLogout}
       />
 
@@ -343,9 +343,18 @@ function App() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-gray-400">
-            <button onClick={handleAdminClick} className="hover:text-gray-600">
+            {/* 
+              SECRET ADMIN ACCESS: 
+              Double-click the copyright text below to open admin login.
+              This is hidden from normal users.
+            */}
+            <span 
+                onDoubleClick={handleSecretLoginTrigger} 
+                className="cursor-default select-none"
+                title=" "
+            >
                 © {new Date().getFullYear()} SouqPro. جميع الحقوق محفوظة.
-            </button>
+            </span>
           </div>
         </div>
       </footer>
