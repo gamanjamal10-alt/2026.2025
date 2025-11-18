@@ -3,7 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 // Safer access to env variable that doesn't crash if process is undefined
 const getApiKey = () => {
   try {
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    // @ts-ignore - preventing process is not defined error
+    if (typeof process !== 'undefined' && process?.env?.API_KEY) {
+      // @ts-ignore
       return process.env.API_KEY;
     }
   } catch (e) {
