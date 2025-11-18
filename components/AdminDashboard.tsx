@@ -98,15 +98,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // --- Shipping Handlers ---
   const handleAddZone = () => {
-      if (!zoneForm.wilaya || !zoneForm.price) {
-          alert("يرجى ملء اسم الولاية والسعر");
+      if (!zoneForm.wilaya) {
+          alert("يرجى ملء اسم الولاية");
           return;
       }
+      
+      // Allow price 0 (Free shipping)
+      const price = (zoneForm.price === undefined || zoneForm.price === null) ? 0 : Number(zoneForm.price);
+
       const newZone: ShippingZone = {
           id: Date.now().toString(),
           wilaya: zoneForm.wilaya,
           baladiya: zoneForm.baladiya || 'الكل',
-          price: Number(zoneForm.price)
+          price: price
       };
       onUpdateZones([...shippingZones, newZone]);
       setZoneForm({ wilaya: '', baladiya: '', price: 400 });

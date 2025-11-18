@@ -62,6 +62,25 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
     }, 1500);
   };
 
+  const handleManualSubmit = () => {
+     // Manual validation checks
+     if(!checkoutForm.name || !checkoutForm.phone || !checkoutForm.wilayaId || !checkoutForm.address) {
+         // If you have a form element reference, you can use checkValidity/reportValidity
+         const form = document.getElementById('checkout-form') as HTMLFormElement;
+         if (form) {
+             if (!form.checkValidity()) {
+                 form.reportValidity();
+                 return;
+             }
+         } else {
+             alert('يرجى ملء جميع الحقول المطلوبة');
+             return;
+         }
+     }
+     // Trigger submit handler manually
+     handleCompleteOrder({ preventDefault: () => {} } as React.FormEvent);
+  };
+
   const resetAndClose = () => {
     // If we are closing after a success, clear the cart now
     if (step === 'success') {
@@ -261,8 +280,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                     رجوع
                   </button>
                   <button 
-                    type="submit"
-                    form="checkout-form"
+                    type="button"
+                    onClick={handleManualSubmit}
                     disabled={isSubmitting}
                     className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
