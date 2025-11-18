@@ -44,41 +44,34 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
   const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal + shippingCost;
 
-  const handleCompleteOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!checkoutForm.wilayaId) {
-        alert('يرجى اختيار الولاية لحساب سعر التوصيل');
-        return;
-    }
+  const handleManualSubmit = () => {
+     // 1. Check Validity
+     if(!checkoutForm.name.trim()) {
+         alert("يرجى إدخال الاسم الكامل");
+         return;
+     }
+     if(!checkoutForm.phone.trim() || checkoutForm.phone.length < 9) {
+         alert("يرجى إدخال رقم هاتف صحيح");
+         return;
+     }
+     if(!checkoutForm.wilayaId) {
+         alert("يرجى اختيار الولاية لحساب سعر التوصيل");
+         return;
+     }
+     if(!checkoutForm.address.trim()) {
+         alert("يرجى إدخال العنوان");
+         return;
+     }
 
-    setIsSubmitting(true);
+     // 2. Proceed
+     setIsSubmitting(true);
 
-    // Simulate API call / Order processing
-    setTimeout(() => {
+     // Simulate API call
+     setTimeout(() => {
         console.log('Order submitted:', { cart, customer: checkoutForm, total });
         setIsSubmitting(false);
         setStep('success');
-    }, 1500);
-  };
-
-  const handleManualSubmit = () => {
-     // Manual validation checks
-     if(!checkoutForm.name || !checkoutForm.phone || !checkoutForm.wilayaId || !checkoutForm.address) {
-         // If you have a form element reference, you can use checkValidity/reportValidity
-         const form = document.getElementById('checkout-form') as HTMLFormElement;
-         if (form) {
-             if (!form.checkValidity()) {
-                 form.reportValidity();
-                 return;
-             }
-         } else {
-             alert('يرجى ملء جميع الحقول المطلوبة');
-             return;
-         }
-     }
-     // Trigger submit handler manually
-     handleCompleteOrder({ preventDefault: () => {} } as React.FormEvent);
+     }, 1500);
   };
 
   const resetAndClose = () => {
@@ -158,11 +151,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
 
             {/* --- Step 2: Checkout Form --- */}
             {step === 'checkout' && (
-              <form id="checkout-form" onSubmit={handleCompleteOrder} className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
                   <input 
-                    required 
                     type="text" 
                     placeholder="أدخل اسمك الثلاثي"
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
@@ -173,11 +165,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
                   <input 
-                    required 
                     type="tel" 
                     placeholder="05XXXXXXXX"
-                    pattern="[0-9]{10}"
-                    title="يرجى إدخال رقم هاتف صحيح مكون من 10 أرقام"
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
                     value={checkoutForm.phone}
                     onChange={e => setCheckoutForm({...checkoutForm, phone: e.target.value})}
@@ -187,7 +176,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                   <label className="block text-sm font-medium text-gray-700 mb-1">الولاية (الشحن)</label>
                   <div className="relative">
                     <select 
-                        required 
                         className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none bg-white appearance-none"
                         value={checkoutForm.wilayaId}
                         onChange={e => setCheckoutForm({...checkoutForm, wilayaId: e.target.value})}
@@ -195,7 +183,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                         <option value="" disabled>اختر الولاية...</option>
                         {shippingZones.map(zone => (
                         <option key={zone.id} value={zone.id}>
-                            {zone.wilaya} - {zone.price} د.ج
+                            {zone.wilaya} - {zone.price === 0 ? 'مجاني' : `${zone.price} د.ج`}
                         </option>
                         ))}
                     </select>
@@ -210,7 +198,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">العنوان بالتفصيل</label>
                   <textarea 
-                    required 
                     rows={2}
                     placeholder="البلدية، الحي، رقم المنزل..."
                     className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary outline-none"
@@ -218,7 +205,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                     onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})}
                   ></textarea>
                 </div>
-              </form>
+              </div>
             )}
 
             {/* --- Step 3: Success --- */}
@@ -251,7 +238,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, cart, r
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>التوصيل ({selectedZone?.wilaya || 'غير محدد'})</span>
-                  <span className={shippingCost > 0 ? "text-gray-800" : "text-gray-400"}>
+                  <span className={shippingCost > 0 ? "text-gray-800" : "text-green-600 font-bold"}>
                     {step === 'checkout' ? (shippingCost > 0 ? `${shippingCost} د.ج` : 'مجاني') : '--'}
                   </span>
                 </div>

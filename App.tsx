@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Product, CartItem, Category, ShippingZone } from './types.ts';
 import { Navbar } from './components/Navbar.tsx';
@@ -342,7 +343,9 @@ function App() {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-gray-400">
-            © {new Date().getFullYear()} SouqPro. جميع الحقوق محفوظة.
+            <button onClick={handleAdminClick} className="hover:text-gray-600">
+                © {new Date().getFullYear()} SouqPro. جميع الحقوق محفوظة.
+            </button>
           </div>
         </div>
       </footer>

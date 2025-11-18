@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ShoppingCart, Store, Settings, LogOut, Lock } from 'lucide-react';
 
@@ -25,16 +26,8 @@ export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMo
           {/* Actions */}
           <div className="flex items-center gap-4">
             
-            {/* Store/Admin Toggle */}
-            {!isAdminMode ? (
-              <button
-                onClick={onAdminClick}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                <Lock size={16} />
-                <span>دخول الإدارة</span>
-              </button>
-            ) : (
+            {/* Admin Mode - Only show Controls if logged in */}
+            {isAdminMode && (
               <div className="flex items-center gap-2">
                  <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold">
                    <Settings size={16} />
@@ -54,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ cartCount, toggleCart, isAdminMo
             {!isAdminMode && (
               <button 
                 onClick={toggleCart}
-                className="relative p-2 text-gray-600 hover:text-primary transition-colors border-r border-gray-200 pr-4 mr-2"
+                className="relative p-2 text-gray-600 hover:text-primary transition-colors"
               >
                 <ShoppingCart size={24} />
                 {cartCount > 0 && (

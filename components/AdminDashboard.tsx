@@ -49,8 +49,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     stock: 10
   });
 
-  // State for Shipping Zone Form
-  const [zoneForm, setZoneForm] = useState({ wilaya: '', baladiya: '', price: 400 });
+  // State for Shipping Zone Form - Changed price to accept string initially for better input handling
+  const [zoneForm, setZoneForm] = useState<{wilaya: string, baladiya: string, price: string | number}>({ 
+    wilaya: '', 
+    baladiya: '', 
+    price: 400 
+  });
 
   const [loadingAI, setLoadingAI] = useState(false);
   const [marketingPopup, setMarketingPopup] = useState<string | null>(null);
@@ -97,22 +101,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- Shipping Handlers ---
-  const handleAddZone = () => {
-      if (!zoneForm.wilaya) {
-          alert("يرجى ملء اسم الولاية");
+  const handleAddZone = (e?: React.MouseEvent) => {
+      if (e) e.preventDefault(); // Prevent form submission if inside a form
+
+      if (!zoneForm.wilaya || zoneForm.wilaya.trim() === '') {
+          alert("يرجى كتابة اسم الولاية");
           return;
       }
       
-      // Allow price 0 (Free shipping)
-      const price = (zoneForm.price === undefined || zoneForm.price === null) ? 0 : Number(zoneForm.price);
+      // Handle price conversion safely
+      let finalPrice = 0;
+      if (zoneForm.price !== '' && zoneForm.price !== null) {
+          finalPrice = Number(zoneForm.price);
+      }
 
       const newZone: ShippingZone = {
-          id: Date.now().toString(),
+          id: Date.now().toString() + Math.random().toString().slice(2, 5),
           wilaya: zoneForm.wilaya,
           baladiya: zoneForm.baladiya || 'الكل',
-          price: price
+          price: finalPrice
       };
+      
+      // Update parent state
       onUpdateZones([...shippingZones, newZone]);
+      
+      // Reset form
       setZoneForm({ wilaya: '', baladiya: '', price: 400 });
   };
 
@@ -397,35 +410,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <h4 className="font-bold text-gray-800 text-sm mb-4">إضافة منطقة توصيل جديدة</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-1">
+                            <label className="block text-xs text-gray-500 mb-1">الولاية</label>
                             <input 
                                 type="text" 
-                                placeholder="الولاية (مثال: الجزائر)" 
-                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none"
+                                placeholder="مثال: الجزائر" 
+                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none bg-white"
                                 value={zoneForm.wilaya}
                                 onChange={e => setZoneForm({...zoneForm, wilaya: e.target.value})}
                             />
                         </div>
                         <div className="md:col-span-1">
+                            <label className="block text-xs text-gray-500 mb-1">سعر التوصيل (د.ج)</label>
                              <input 
                                 type="number" 
-                                placeholder="سعر التوصيل (د.ج)" 
-                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none"
+                                placeholder="0" 
+                                className="w-full p-2.5 rounded-lg border border-gray-200 text-sm focus:border-primary outline-none bg-white"
                                 value={zoneForm.price}
-                                onChange={e => setZoneForm({...zoneForm, price: Number(e.target.value)})}
+                                onChange={e => setZoneForm({...zoneForm, price: e.target.value})}
                             />
                         </div>
-                        <button 
-                            onClick={handleAddZone}
-                            className="md:col-span-1 bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-2 md:py-0"
-                        >
-                            <Plus size={16} />
-                            إضافة
-                        </button>
+                        <div className="md:col-span-1 flex items-end">
+                          <button 
+                              type="button"
+                              onClick={handleAddZone}
+                              className="w-full bg-secondary text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 py-2.5 shadow-md"
+                          >
+                              <Plus size={16} />
+                              إضافة المنطقة
+                          </button>
+                        </div>
                     </div>
                 </div>
 
                 <div className="space-y-3">
                     <h4 className="font-bold text-gray-800 text-sm mb-2">المناطق المضافة ({shippingZones.length})</h4>
+                    <div className="space-y-2">
                     {shippingZones.map(zone => (
                          <div key={zone.id} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-3">
@@ -438,7 +457,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className="font-bold text-primary bg-primary/5 px-3 py-1 rounded-full text-sm">{zone.price} د.ج</span>
+                                <span className="font-bold text-primary bg-primary/5 px-3 py-1 rounded-full text-sm">
+                                  {zone.price === 0 ? 'مجاني' : `${zone.price} د.ج`}
+                                </span>
                                 <button 
                                     onClick={() => handleDeleteZone(zone.id)}
                                     className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
@@ -449,6 +470,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                         </div>
                     ))}
+                    </div>
                     {shippingZones.length === 0 && (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-gray-400 text-sm">
                             لا توجد مناطق توصيل مضافة. قم بإضافة الولاية والسعر أعلاه.
